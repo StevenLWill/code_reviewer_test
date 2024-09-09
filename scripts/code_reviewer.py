@@ -19,13 +19,11 @@ def get_pr_diff():
     # Extract PR number from event data
     pr_number = event_data['pull_request']['number']
     repo = os.getenv('GITHUB_REPOSITORY')  # e.g., user/repo
-
-    print(f'#### PR Number: {pr_number} ####')
     
     # Use the GitHub API to fetch the PR diff
     url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}/files"
     headers = {
-        'Authorization': f"token {os.getenv('GITHUB_TOKEN')}",
+        'Authorization': f"Bearer {os.getenv('GITHUB_TOKEN')}",  # Ensure Bearer is used with the token
         'Accept': 'application/vnd.github.v3+json',
     }
     
@@ -50,18 +48,24 @@ def review_code_with_rag(diff):
         """
     )
     
-    # Initialize LLMChain
-    chain = LLMChain(
-        prompt=prompt_template,
-        llm=openai.Completion.create(engine="text-davinci-003")
+    # Using the ChatCompletion API instead of the deprecated Completion API
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",  # You can also use "gpt-4" if you have access
+        messages=[
+            {"role": "system", "content": "You are a code review assistant."},
+            {"role": "user", "content": prompt_template.format(diff=diff)},
+        ]
     )
     
-    # Run the code diff through the LLM
-    response = chain.run({"diff": diff})
-    return response
+    # Extract and return the feedback from the response
+    feedback = response['choices'][0]['message']['content']
+    return feedback
 
 # Main logic
 if __name__ == "__main__":
-    diff = get_pr_diff()
-    feedback = review_code_with_rag(diff)
-    print("AI Review Feedback:\n", feedback)
+    try:
+        diff = get_pr_diff()
+        feedback = review_code_with_rag(diff)
+        print("AI Review Feedback:\n", feedback)
+    except Exception as e:
+        print(f"Error: {e}")
