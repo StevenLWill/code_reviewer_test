@@ -1,10 +1,12 @@
-import openai
-import requests
 import os
+from openai import OpenAI
 import json
+import requests
 
-# Setup OpenAI API key
-openai.api_key = os.getenv('OPENAI_API_KEY')
+# Setup OpenAI client
+openai_client = OpenAI(
+    api_key=os.getenv('OPENAI_API_KEY')
+)
 
 # Function to retrieve the PR diff
 def get_pr_diff():
@@ -21,7 +23,7 @@ def get_pr_diff():
     # Use the GitHub API to fetch the PR diff
     url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}/files"
     headers = {
-        'Authorization': f"Bearer {os.getenv('GITHUB_TOKEN')}",  # Ensure Bearer is used with the token
+        'Authorization': f"Bearer {os.getenv('GITHUB_TOKEN')}",  
         'Accept': 'application/vnd.github.v3+json',
     }
     
@@ -34,7 +36,6 @@ def get_pr_diff():
 
 # Function to review code using RAG (with the correct API usage)
 def review_code_with_rag(diff):
-    # Define the prompt template
     prompt_template = f"""
     You are an AI code reviewer. Your task is to review the following code diff and provide feedback on potential improvements, best practices, and any issues you find:
 
@@ -43,8 +44,7 @@ def review_code_with_rag(diff):
     Provide a detailed analysis.
     """
     
-    # Use the new `openai.ChatCompletion.create()` function
-    response = openai.ChatCompletion.create(
+    completion = openai_client.chat.completions.create(
         model="gpt-3.5-turbo",  # Use gpt-3.5-turbo or gpt-4 based on availability
         messages=[
             {"role": "system", "content": "You are a code review assistant."},
@@ -52,8 +52,7 @@ def review_code_with_rag(diff):
         ]
     )
     
-    # Extract and return the feedback from the response
-    feedback = response['choices'][0]['message']['content']
+    feedback = completion.choices[0].message.content
     return feedback
 
 # Main logic
