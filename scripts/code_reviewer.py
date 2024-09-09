@@ -41,10 +41,6 @@ def get_pr_diff():
 
 def review_code_with_rag(diff):
 
-    print('#####################')
-    print(diff)
-    print('#####################')
-
     prompt_template = f"""
     You are an AI code reviewer. Your task is to review the following code diff and provide feedback on potential improvements, best practices, and any issues you find:
 
