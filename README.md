@@ -28,5 +28,5 @@ This repository is a demo of how a code review system can be built using OpenAI'
 1. Clone this repository:
 
    ```bash
-   git clone https://github.com/your-username/code-reviewer-openai-demo.git
-   cd code-reviewer-openai-demo
+   git clone https://github.com/stevenlwill/code_reviewer_test.git
+   cd code_reviewer_test
