@@ -116,7 +116,7 @@ def update_check_run(repo, check_id, conclusion, output):
 def post_comment(repo, pr_number, body):
     url = f"https://api.github.com/repos/{repo}/issues/comments"
     headers = {
-        'Authorization': f"Bearer {os.getenv('GITHUB_TOKEN')}",
+        'Authorization': f"Bearer {os.getenv('PERSONAL_GITHUB_TOKEN')}",
         'Content-Type': 'application/json',
         'Accept': 'application/vnd.github.v3+json'
     }
