@@ -115,7 +115,7 @@ def update_check_run(repo, check_id, conclusion, output):
     response = requests.patch(url, headers=headers, json=payload)
     response.raise_for_status()
 
-def post_comment(repo, pr_number, body):
+def post_comment(repo: str, pr_number: int, body: str):
     url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
     headers = {
         'Authorization': f"Bearer {os.getenv('PERSONAL_GITHUB_TOKEN')}",
@@ -128,7 +128,7 @@ def post_comment(repo, pr_number, body):
     }
 
     try:
-        response = requests.post(url, headers=headers, json=payload)
+        response = requests.post(url, headers=headers, json=payload, timeout=30)
         response.raise_for_status()
         logger.info("Comment posted successfully")
         return response.json()
@@ -164,7 +164,7 @@ if __name__ == "__main__":
 
         print(f"Using token: {os.getenv('PERSONAL_GITHUB_TOKEN')}[:10] + '...'")
         # Post comment on PR
-        post_comment(repo, pr_number, "AI Code Review completed. Please review the check run results.")
+        post_comment(repo, pr_number, feedback)
 
         logger.info("AI Code Review completed successfully.")
     except Exception as e:
