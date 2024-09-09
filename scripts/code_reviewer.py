@@ -40,6 +40,11 @@ def get_pr_diff():
         raise
 
 def review_code_with_rag(diff):
+
+    print('#####################')
+    print(diff)
+    print('#####################')
+
     prompt_template = f"""
     You are an AI code reviewer. Your task is to review the following code diff and provide feedback on potential improvements, best practices, and any issues you find:
 
@@ -64,13 +69,11 @@ def review_code_with_rag(diff):
 
 
 if __name__ == "__main__":
-    try:      
-        # Fetch PR diff
-        diff = get_pr_diff()
+    # Fetch PR diff
+    diff = get_pr_diff()
         
-        # Perform code review
-        feedback = review_code_with_rag(diff)
+    # Perform code review
+    feedback = review_code_with_rag(diff)
         
-        print("AI Review Feedback:\n", feedback)
-    except Exception as e:
-        logger.error(f"Main execution failed: {str(e)}")
+    print("AI Review Feedback:\n", feedback)
+   
