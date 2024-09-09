@@ -8,9 +8,12 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+api_key=os.getenv('OPENAI_API_KEY')
+print('##############')
+print(len(api_key))
 # Setup OpenAI client
 openai_client = OpenAI(
-    api_key=os.getenv('OPENAI_API_KEY')
+    api_key=api_key
 )
 
 def get_pr_diff():
@@ -48,7 +51,7 @@ def review_code_with_rag(diff):
     
     try:
         completion = openai_client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are a code review assistant."},
                 {"role": "user", "content": prompt_template},
@@ -60,28 +63,9 @@ def review_code_with_rag(diff):
         logger.error(f"Error during OpenAI API call: {str(e)}")
         raise
 
-def test_openai_connection():
-    try:
-        result = openai_client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": "You are an assistant."},
-                {"role": "user", "content": "Hello"},
-            ]
-        )
-        logger.info("OpenAI connection successful")
-        return True
-    except Exception as e:
-        logger.error(f"Failed to connect to OpenAI: {str(e)}")
-        return False
 
 if __name__ == "__main__":
-    try:
-        # Test OpenAI connection
-        if not test_openai_connection():
-            logger.error("Unable to establish connection with OpenAI")
-            exit(1)
-        
+    try:      
         # Fetch PR diff
         diff = get_pr_diff()
         
