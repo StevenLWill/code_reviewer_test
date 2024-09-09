@@ -3,19 +3,26 @@ from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 import requests
 import os
+import json
 
 # Setup OpenAI API key
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
 # Function to retrieve the PR diff
 def get_pr_diff():
-    # GitHub provides the PR number and repo details via environment variables
-    repo = os.getenv('GITHUB_REPOSITORY')
-    pr_number = os.getenv('GITHUB_PR_NUMBER')
-
-    print(f'Repo: {repo}')
-    print(f'PR Number: {pr_number}')
+    # GitHub provides the event file containing the PR data
+    event_path = os.getenv('GITHUB_EVENT_PATH')
     
+    with open(event_path, 'r') as f:
+        event_data = json.load(f)
+    
+    # Extract PR number from event data
+    pr_number = event_data['pull_request']['number']
+    repo = os.getenv('GITHUB_REPOSITORY')  # e.g., user/repo
+
+    print(f'#### PR Number: {pr_number} ####')
+    
+    # Use the GitHub API to fetch the PR diff
     url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}/files"
     headers = {
         'Authorization': f"token {os.getenv('GITHUB_TOKEN')}",
@@ -27,7 +34,7 @@ def get_pr_diff():
         files = response.json()
         return '\n'.join([f['patch'] for f in files])  # The 'patch' contains the diff
     else:
-        raise Exception("Failed to fetch PR diff")
+        raise Exception(f"Failed to fetch PR diff: {response.status_code}, {response.text}")
 
 # Retrieval-Augmented Generation (RAG) logic
 def review_code_with_rag(diff):
