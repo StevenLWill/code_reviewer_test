@@ -8,7 +8,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-api_key=os.getenv('OPENAI_API_KEY')
+api_key=os.getenv('OPEN_AI_KEY')
 print('##############')
 print(len(api_key))
 # Setup OpenAI client
