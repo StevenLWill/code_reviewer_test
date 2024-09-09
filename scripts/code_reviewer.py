@@ -1,5 +1,4 @@
 import openai
-from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 import requests
 import os
@@ -36,24 +35,21 @@ def get_pr_diff():
 
 # Retrieval-Augmented Generation (RAG) logic
 def review_code_with_rag(diff):
-    # Define prompt template
-    prompt_template = PromptTemplate(
-        input_variables=["diff"],
-        template="""
-        You are a code review AI that helps developers identify potential issues, best practices, 
-        and improvements. Given the following code diff:
-        {diff}
-        Analyze it and provide detailed feedback, including suggestions for improvements and 
-        adherence to best practices.
-        """
-    )
+    # Define the prompt template
+    prompt_template = f"""
+    You are an AI code reviewer. Your task is to review the following code diff and provide feedback on potential improvements, best practices, and any issues you find:
+
+    {diff}
+
+    Provide a detailed analysis.
+    """
     
-    # Using the ChatCompletion API instead of the deprecated Completion API
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",  # You can also use "gpt-4" if you have access
+    # Use the new `openai.completions.create()` function
+    response = openai.completions.create(
+        model="gpt-3.5-turbo",  # or gpt-3.5-turbo if you want a cheaper option
         messages=[
             {"role": "system", "content": "You are a code review assistant."},
-            {"role": "user", "content": prompt_template.format(diff=diff)},
+            {"role": "user", "content": prompt_template},
         ]
     )
     
