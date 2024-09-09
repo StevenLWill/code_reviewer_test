@@ -9,8 +9,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 api_key=os.getenv('OPEN_AI_KEY')
-print('##############')
-print(len(api_key))
+
 # Setup OpenAI client
 openai_client = OpenAI(
     api_key=api_key
