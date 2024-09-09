@@ -1,8 +1,7 @@
 import os
-from openai import OpenAI
-import json
 import requests
 import logging
+import json
 from base64 import b64decode
 
 # Set up logging
@@ -12,20 +11,32 @@ logger = logging.getLogger(__name__)
 api_key = os.getenv('OPEN_AI_KEY')
 
 # Setup OpenAI client
-openai_client = OpenAI(
-    api_key=api_key
-)
+openai_client = OpenAI(api_key=api_key)
 
-def get_pr_diff():
+def get_pr_details():
     event_path = os.getenv('GITHUB_EVENT_PATH')
     
     try:
         with open(event_path, 'r') as f:
             event_data = json.load(f)
         
-        pr_number = event_data['pull_request']['number']
         repo = os.getenv('GITHUB_REPOSITORY')
+        pr_number = event_data['pull_request']['number']
+        sha = event_data['pull_request']['head']['sha']
         
+        logger.info(f"Repository: {repo}")
+        logger.info(f"Pull Request Number: {pr_number}")
+        logger.info(f"SHA: {sha}")
+        
+        return repo, pr_number, sha
+    except Exception as e:
+        logger.error(f"Error fetching PR details: {str(e)}")
+        raise
+
+def get_pr_diff():
+    repo, pr_number, _ = get_pr_details()
+    
+    try:
         url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}/files"
         headers = {
             'Authorization': f"Bearer {os.getenv('GITHUB_TOKEN')}",
@@ -101,7 +112,7 @@ def update_check_run(repo, check_id, conclusion, output):
     response = requests.patch(url, headers=headers, json=payload)
     response.raise_for_status()
 
-def post_comment(repo, issue_number, body):
+def post_comment(repo, pr_number, body):
     url = f"https://api.github.com/repos/{repo}/issues/comments"
     headers = {
         'Authorization': f"Bearer {os.getenv('GITHUB_TOKEN')}",
@@ -110,31 +121,33 @@ def post_comment(repo, issue_number, body):
     }
     payload = {
         "body": body,
-        "issue_number": issue_number
+        "issue_number": pr_number
     }
-    response = requests.post(url, headers=headers, json=payload)
-    response.raise_for_status()
+
+    try:
+        response = requests.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+        logger.info("Comment posted successfully")
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error posting comment: {str(e)}")
+        logger.error(f"Response status: {response.status_code}")
+        logger.error(f"Response text: {response.text}")
+        raise
 
 if __name__ == "__main__":
     try:
-        # Fetch PR details
-        event_path = os.getenv('GITHUB_EVENT_PATH')
-        with open(event_path, 'r') as f:
-            event_data = json.load(f)
+        repo, pr_number, sha = get_pr_details()
         
-        pr_number = event_data['pull_request']['number']
-        repo = os.getenv('GITHUB_REPOSITORY')
-        sha = event_data['pull_request']['head']['sha']
-
-        # Create initial check run
-        check_id = create_check_run(repo, sha)
-
         # Fetch PR diff
         diff = get_pr_diff()
         
         # Perform code review
         feedback = review_code_with_rag(diff)
         
+        # Create initial check run
+        check_id = create_check_run(repo, sha)
+
         # Update check run with results
         output = {
             "title": "AI Code Review Results",
