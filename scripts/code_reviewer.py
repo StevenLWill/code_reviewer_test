@@ -3,6 +3,7 @@ import requests
 import logging
 import json
 from base64 import b64decode
+from openai import OpenAI
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
