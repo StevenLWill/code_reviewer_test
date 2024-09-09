@@ -2,39 +2,41 @@ import os
 from openai import OpenAI
 import json
 import requests
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Setup OpenAI client
 openai_client = OpenAI(
     api_key=os.getenv('OPENAI_API_KEY')
 )
 
-# Function to retrieve the PR diff
 def get_pr_diff():
-    # GitHub provides the event file containing the PR data
     event_path = os.getenv('GITHUB_EVENT_PATH')
     
-    with open(event_path, 'r') as f:
-        event_data = json.load(f)
-    
-    # Extract PR number from event data
-    pr_number = event_data['pull_request']['number']
-    repo = os.getenv('GITHUB_REPOSITORY')  # e.g., user/repo
-    
-    # Use the GitHub API to fetch the PR diff
-    url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}/files"
-    headers = {
-        'Authorization': f"Bearer {os.getenv('GITHUB_TOKEN')}",  
-        'Accept': 'application/vnd.github.v3+json',
-    }
-    
-    response = requests.get(url, headers=headers)
-    if response.status_code == 200:
+    try:
+        with open(event_path, 'r') as f:
+            event_data = json.load(f)
+        
+        pr_number = event_data['pull_request']['number']
+        repo = os.getenv('GITHUB_REPOSITORY')
+        
+        url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}/files"
+        headers = {
+            'Authorization': f"Bearer {os.getenv('GITHUB_TOKEN')}",
+            'Accept': 'application/vnd.github.v3+json',
+        }
+        
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
         files = response.json()
-        return '\n'.join([f['patch'] for f in files])  # The 'patch' contains the diff
-    else:
-        raise Exception(f"Failed to fetch PR diff: {response.status_code}, {response.text}")
+        return '\n'.join([f['patch'] for f in files])
+    except Exception as e:
+        logger.error(f"Error fetching PR diff: {str(e)}")
+        raise
 
-# Function to review code using RAG (with the correct API usage)
 def review_code_with_rag(diff):
     prompt_template = f"""
     You are an AI code reviewer. Your task is to review the following code diff and provide feedback on potential improvements, best practices, and any issues you find:
@@ -44,22 +46,48 @@ def review_code_with_rag(diff):
     Provide a detailed analysis.
     """
     
-    completion = openai_client.chat.completions.create(
-        model="gpt-3.5-turbo",  # Use gpt-3.5-turbo or gpt-4 based on availability
-        messages=[
-            {"role": "system", "content": "You are a code review assistant."},
-            {"role": "user", "content": prompt_template},
-        ]
-    )
-    
-    feedback = completion.choices[0].message.content
-    return feedback
+    try:
+        completion = openai_client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a code review assistant."},
+                {"role": "user", "content": prompt_template},
+            ]
+        )
+        
+        return completion.choices[0].message.content
+    except Exception as e:
+        logger.error(f"Error during OpenAI API call: {str(e)}")
+        raise
 
-# Main logic
+def test_openai_connection():
+    try:
+        result = openai_client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are an assistant."},
+                {"role": "user", "content": "Hello"},
+            ]
+        )
+        logger.info("OpenAI connection successful")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to connect to OpenAI: {str(e)}")
+        return False
+
 if __name__ == "__main__":
     try:
+        # Test OpenAI connection
+        if not test_openai_connection():
+            logger.error("Unable to establish connection with OpenAI")
+            exit(1)
+        
+        # Fetch PR diff
         diff = get_pr_diff()
+        
+        # Perform code review
         feedback = review_code_with_rag(diff)
+        
         print("AI Review Feedback:\n", feedback)
     except Exception as e:
-        print(f"Error: {e}")
+        logger.error(f"Main execution failed: {str(e)}")
