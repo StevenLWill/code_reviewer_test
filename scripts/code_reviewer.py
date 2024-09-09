@@ -1,5 +1,4 @@
 import openai
-from langchain.prompts import PromptTemplate
 import requests
 import os
 import json
@@ -33,7 +32,7 @@ def get_pr_diff():
     else:
         raise Exception(f"Failed to fetch PR diff: {response.status_code}, {response.text}")
 
-# Retrieval-Augmented Generation (RAG) logic
+# Function to review code using RAG (with the correct API usage)
 def review_code_with_rag(diff):
     # Define the prompt template
     prompt_template = f"""
@@ -44,9 +43,9 @@ def review_code_with_rag(diff):
     Provide a detailed analysis.
     """
     
-    # Use the new `openai.completions.create()` function
-    response = openai.completions.create(
-        model="gpt-3.5-turbo",  # or gpt-3.5-turbo if you want a cheaper option
+    # Use the new `openai.ChatCompletion.create()` function
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",  # Use gpt-3.5-turbo or gpt-4 based on availability
         messages=[
             {"role": "system", "content": "You are a code review assistant."},
             {"role": "user", "content": prompt_template},
