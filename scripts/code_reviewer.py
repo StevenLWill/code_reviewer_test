@@ -12,6 +12,9 @@ def get_pr_diff():
     # GitHub provides the PR number and repo details via environment variables
     repo = os.getenv('GITHUB_REPOSITORY')
     pr_number = os.getenv('GITHUB_PR_NUMBER')
+
+    print(f'Repo: {repo}')
+    print(f'PR Number: {pr_number}')
     
     url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}/files"
     headers = {
