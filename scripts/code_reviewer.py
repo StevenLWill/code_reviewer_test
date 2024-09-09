@@ -48,7 +48,7 @@ def review_code_with_rag(diff):
     
     try:
         completion = openai_client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o",
             messages=[
                 {"role": "system", "content": "You are a code review assistant."},
                 {"role": "user", "content": prompt_template},
@@ -63,7 +63,7 @@ def review_code_with_rag(diff):
 def test_openai_connection():
     try:
         result = openai_client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o",
             messages=[
                 {"role": "system", "content": "You are an assistant."},
                 {"role": "user", "content": "Hello"},
