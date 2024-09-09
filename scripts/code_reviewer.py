@@ -4,6 +4,8 @@ import logging
 import json
 from base64 import b64decode
 from openai import OpenAI
+import time
+import re
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -114,7 +116,7 @@ def update_check_run(repo, check_id, conclusion, output):
     response.raise_for_status()
 
 def post_comment(repo, pr_number, body):
-    url = f"https://api.github.com/repos/{repo}/issues/comments"
+    url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
     headers = {
         'Authorization': f"Bearer {os.getenv('PERSONAL_GITHUB_TOKEN')}",
         'Content-Type': 'application/json',
@@ -134,12 +136,12 @@ def post_comment(repo, pr_number, body):
         logger.error(f"Error posting comment: {str(e)}")
         logger.error(f"Response status: {response.status_code}")
         logger.error(f"Response text: {response.text}")
+        if response.status_code == 403:
+            logger.warning("Rate limit exceeded. Waiting 60 seconds...")
+            time.sleep(60)
         raise
 
 if __name__ == "__main__":
-    print('#################')
-    print(os.getenv('PERSONAL_GITHUB_TOKEN'))
-    print('#################')
     try:
         repo, pr_number, sha = get_pr_details()
         
@@ -160,6 +162,7 @@ if __name__ == "__main__":
         }
         update_check_run(repo, check_id, "success", output)
 
+        print(f"Using token: {os.getenv('PERSONAL_GITHUB_TOKEN')}[:10] + '...'")
         # Post comment on PR
         post_comment(repo, pr_number, "AI Code Review completed. Please review the check run results.")
 
