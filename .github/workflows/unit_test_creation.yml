@@ -1,0 +1,43 @@
+name: Generate Unit Tests with AI
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  generate-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the code from the PR
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Step 2: Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install openai
+
+      # Step 4: Run Unit Test Generator Script
+      - name: Run Unit Test Generator
+        run: python scripts/generate_tests.py
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+      # Step 5: Commit and push generated unit tests back to the repository
+      - name: Commit and push generated tests
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add tests/
+          git commit -m "Add generated unit tests"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
